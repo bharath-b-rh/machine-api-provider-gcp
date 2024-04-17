@@ -558,7 +558,7 @@ func TestCreate(t *testing.T) {
 				providerStatus: &machinev1.GCPMachineProviderStatus{},
 				computeService: mockComputeService,
 				projectID:      providerSpec.ProjectID,
-				featureGates:   featuregates.NewFeatureGate([]configv1.FeatureGateName{configv1.FeatureGateGCPLabelsTags}, nil),
+				featureGates:   featuregates.NewFeatureGate(nil, nil),
 				tagService:     mockTagService,
 			}
 

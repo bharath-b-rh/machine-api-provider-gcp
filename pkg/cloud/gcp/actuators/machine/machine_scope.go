@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	configv1 "github.com/openshift/api/config/v1"
 	machinev1 "github.com/openshift/api/machine/v1beta1"
 	"github.com/openshift/library-go/pkg/operator/configobserver/featuregates"
 	machineapierros "github.com/openshift/machine-api-operator/pkg/controller/machine"
@@ -50,9 +49,6 @@ type machineScope struct {
 
 	machineToBePatched controllerclient.Patch
 
-	// gcpLabelsTagsFeatureEnabled indicates whether FeatureGateGCPLabelsTags is enabled
-	gcpLabelsTagsFeatureEnabled bool
-
 	// tagService is for handling resource manager tags related operations.
 	tagService tagservice.TagService
 
@@ -94,12 +90,9 @@ func newMachineScope(params machineScopeParams) (*machineScope, error) {
 		return nil, machineapierros.InvalidMachineConfiguration("error creating compute service: %v", err)
 	}
 
-	var tagService tagservice.TagService
-	if params.featureGates.Enabled(configv1.FeatureGateGCPLabelsTags) {
-		tagService, err = params.tagsClientBuilder(params.Context, serviceAccountJSON)
-		if err != nil {
-			return nil, machineapierros.InvalidMachineConfiguration("error creating tag service: %v", err)
-		}
+	tagService, err := params.tagsClientBuilder(params.Context, serviceAccountJSON)
+	if err != nil {
+		return nil, machineapierros.InvalidMachineConfiguration("error creating tag service: %v", err)
 	}
 
 	return &machineScope{

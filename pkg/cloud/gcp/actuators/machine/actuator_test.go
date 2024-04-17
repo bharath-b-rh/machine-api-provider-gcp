@@ -46,7 +46,10 @@ func TestActuatorEvents(t *testing.T) {
 	timeout := 10 * time.Second
 
 	testEnv := &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "..", "..", "..", "..", "config", "crds")},
+		CRDDirectoryPaths: []string{
+			filepath.Join("..", "..", "..", "..", "..", "config", "crds"),
+			filepath.Join("..", "..", "..", "..", "..", "vendor", "github.com", "openshift", "api", "config", "v1", "0000_10_config-operator_01_infrastructure-Default.crd.yaml"),
+		},
 	}
 
 	cfg, err := testEnv.Start()
@@ -123,6 +126,28 @@ func TestActuatorEvents(t *testing.T) {
 	})
 	g.Expect(err).ToNot(HaveOccurred())
 	g.Expect(providerSpec).ToNot(BeNil())
+
+	infraObj := &configv1.Infrastructure{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "cluster",
+		},
+		Spec: configv1.InfrastructureSpec{
+			PlatformSpec: configv1.PlatformSpec{
+				Type: configv1.GCPPlatformType,
+			},
+		},
+		Status: configv1.InfrastructureStatus{
+			InfrastructureName: "test-748kjf",
+			PlatformStatus: &configv1.PlatformStatus{
+				Type: configv1.GCPPlatformType,
+				GCP:  &configv1.GCPPlatformStatus{},
+			},
+		},
+	}
+	g.Expect(k8sClient.Create(context.Background(), infraObj)).To(Succeed())
+	defer func() {
+		g.Expect(k8sClient.Delete(context.Background(), infraObj)).To(Succeed())
+	}()
 
 	cases := []struct {
 		name      string
@@ -283,7 +308,7 @@ func TestActuatorEvents(t *testing.T) {
 				EventRecorder:        eventRecorder,
 				ComputeClientBuilder: computeservice.MockBuilderFuncType,
 				TagsClientBuilder:    tagservice.NewMockTagServiceBuilder,
-				FeatureGates:         featuregates.NewFeatureGate(nil, []configv1.FeatureGateName{configv1.FeatureGateGCPLabelsTags}),
+				FeatureGates:         featuregates.NewFeatureGate(nil, nil),
 			}
 
 			actuator := NewActuator(params)
@@ -383,7 +408,7 @@ func TestActuatorExists(t *testing.T) {
 				CoreClient:           controllerfake.NewFakeClient(userDataSecret, credentialsSecret),
 				ComputeClientBuilder: computeservice.MockBuilderFuncType,
 				TagsClientBuilder:    tagservice.NewMockTagServiceBuilder,
-				FeatureGates:         featuregates.NewFeatureGate(nil, []configv1.FeatureGateName{configv1.FeatureGateGCPLabelsTags}),
+				FeatureGates:         featuregates.NewFeatureGate(nil, nil),
 			}
 
 			actuator := NewActuator(params)
